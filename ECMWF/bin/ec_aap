@@ -21,6 +21,7 @@ TAG_RC=$?
 
 printf "EC_GIT_TAG=%s\n" "$EC_GIT_TAG" >> $ANSIBLE_LOG_PATH
 ec_pstree -XKTP $$ >> $ANSIBLE_LOG_PATH 2>&1
+env | grep -P '^EC_' $$ >> $ANSIBLE_LOG_PATH 2>&1
 
 export EC_DO_NOT_SOURCE_DOTFILES=bash
 

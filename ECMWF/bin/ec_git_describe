@@ -23,7 +23,7 @@ HOSTN=$(hostname -s)
 TS=$(date +"%Y%m%d_%H%M%S")
 
 USERID="$(/usr/bin/id -un)"
-if [[ $USERID == root ]]; then
+if [[ $USERID == root || -n $EC_ROOT_USER ]]; then
     USERID="${USERID}(${EC_ROOT_USER:-'UNKNOWN_EC_ROOT_USER'})"
 fi
 
