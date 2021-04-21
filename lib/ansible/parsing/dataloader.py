@@ -337,6 +337,27 @@ class DataLoader:
                     result = to_text(b_candidate)
                     break
 
+#------------------------------------------------------------------------------# ECMWF BEGIN
+
+            if not result:  
+                for b_candidate in search:
+                    display.vvvvv(u'looking for "%s" at "%s"' % (source, to_text(b_candidate)))
+                    while not result and re.search( '\?_[\w\-\.]+_\?', to_text(b_candidate) ):
+                        # syg: found overlay qualifier token; squash it to fall
+                        # back to non-specialised path
+                        b_candidate_sq = re.sub( r'(.*)\?_[\w\-\.]+_\?', r'\1', to_text(b_candidate) )
+                        display.v(u'ECMWF/syg: also looking for "%s" at "%s" instead of "%s" ("%s")' % (source, to_text(b_candidate_sq), to_text(b_candidate), b_candidate ))
+                        b_candidate = b_candidate_sq
+                        if os.path.exists(b_candidate):
+                            result = to_text(b_candidate)
+                            display.v(u'ECMWF/syg: found "%s" at "%s"' % (source, to_text(b_candidate)))
+                            break
+                    if result:
+                        break
+
+#------------------------------------------------------------------------------# ECMWF END
+
+
         if result is None:
             raise AnsibleFileNotFound(file_name=source, paths=[to_native(p) for p in search])
 

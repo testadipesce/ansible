@@ -1543,13 +1543,23 @@ class AnsibleModule(object):
                 self.fail_json(msg="Could not hash file '%s' with algorithm '%s'. Available algorithms: %s" %
                                    (filename, algorithm, ', '.join(AVAILABLE_HASH_ALGORITHMS)))
 
-        blocksize = 64 * 1024
-        infile = open(os.path.realpath(b_filename), 'rb')
-        block = infile.read(blocksize)
-        while block:
-            digest_method.update(block)
-            block = infile.read(blocksize)
+#------------------------------------------------------------------------------# ECMWF BEGIN
+#        blocksize = 64 * 1024
+#        infile = open(os.path.realpath(b_filename), 'rb')
+#        block = infile.read(blocksize)
+#        while block:
+#            digest_method.update(block)
+#            block = infile.read(blocksize)
+#        infile.close()
+
+        infile = open( os.path.realpath(b_filename),'rb' )
+        for line in infile:
+            if not re.search( to_bytes('EC_GIT_TAG\s*='), line ):
+               digest_method.update( line )
+               #digest_method.update( line.encode() )
         infile.close()
+#------------------------------------------------------------------------------# ECMWF END
+
         return digest_method.hexdigest()
 
     def md5(self, filename):
@@ -1581,13 +1591,34 @@ class AnsibleModule(object):
         backupdest = ''
         if os.path.exists(fn):
             # backups named basename.PID.YYYY-MM-DD@HH:MM:SS~
-            ext = time.strftime("%Y-%m-%d@%H:%M:%S~", time.localtime(time.time()))
-            backupdest = '%s.%s.%s' % (fn, os.getpid(), ext)
+           
+#- ECMWF mod BEGIN ----
+#            ext = time.strftime("%Y-%m-%d@%H:%M:%S~", time.localtime(time.time()))
+#            backupdest = '%s.%s.%s' % (fn, os.getpid(), ext)
+
+            ofn = fn
+            try: 
+                eccfg_dirname = os.path.join( os.path.dirname( fn ), '.eccfg' )
+                if not os.path.exists( eccfg_dirname ):
+                    os.makedirs( eccfg_dirname )
+                fn = os.path.join( eccfg_dirname, os.path.basename( fn ) )
+            except:
+                self.fail_json(msg='Could not make eccfg backupdir at %s: %s' % ( eccfg_dirname, e))
+
+
+            ext = time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
+            backupdest = '%s.ec_ansible_backup.%s.%s' % (fn, os.getpid(), ext)
+
+#- ECMWF mod END ----
+
+ 
 
             try:
-                self.preserved_copy(fn, backupdest)
+# ECMWF                self.preserved_copy(fn, backupdest)
+                self.preserved_copy(ofn, backupdest)
             except (shutil.Error, IOError) as e:
-                self.fail_json(msg='Could not make backup of %s to %s: %s' % (fn, backupdest, to_native(e)))
+# ECMWF                self.fail_json(msg='Could not make backup of %s to %s: %s' % (fn, backupdest, to_native(e)))
+                self.fail_json(msg='Could not make backup of %s to %s: %s' % ( ofn, backupdest, to_native(e)))
 
         return backupdest
 

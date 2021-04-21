@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# syg: quick and dirty try to determine directory with .git root for current
+# directory
+
+SPWD=$(pwd -P)
+
+_CWD=$PWD;
+while [[ ! -d $_CWD/.git ]]; do
+    _CWD="$(dirname $_CWD)";
+    if [[ $_CWD == "/" ]]; then
+        _CWD="__ERROR__could_not_determine_GITROOT_DIR_for_$SPWD"
+        break
+    fi
+done
+set -e
+cd $_CWD
+printf "%s" $_CWD

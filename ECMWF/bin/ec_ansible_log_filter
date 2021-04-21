@@ -1,0 +1,164 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+use Getopt::Std;
+
+our %opt;
+
+
+$opt{'f'} = '.';
+$opt{'e'} = 'ok';
+$opt{'U'} = 0;
+if ( ! getopts( 'hf:e:UPm', \%opt ) || exists $opt{'h'} )
+{
+  printf STDERR<<"EOH";
+
+$0: filter/reformat ansible-playbook output to become grep-friendly
+
+-f <regex>: only capture matching message types, default: \'.\'
+-e <regex>: exclude matching message types, default: \'ok\'
+-U: display any UNMATCHED lines
+-P: output pre-amble with proctree, for documentation purposes
+-m: mirror raw input to STDERR
+
+
+
+EOH
+  exit 1;
+}
+
+
+our %initialized;
+our %finalized;
+our %play_recap;
+our %fatal;
+
+our $current_play = "";
+our $current_task = "";
+
+if ( exists $opt{'P'} )
+{
+    system( sprintf "ec_pstree -XKTP %s >&2", getppid() );
+}
+
+while  ( my $l=<STDIN> )
+{
+  if ( exists $opt{'m'} )
+  {
+     printf STDERR '[RAW] %s', $l;
+  }
+  chomp $l;
+  my ( $msg, $node, $detail );
+  my @M;
+
+  if ( @M = $l =~ m#ok: \[([\w\.\-]+)\].* ec_initialized# )
+  {
+      $initialized{$M[0]} = 1;
+      next;
+  }
+  if ( @M = $l =~ m#ok: \[([\w\.\-]+)\].* ec_finalized# )
+  {
+      $finalized{$M[0]} = 1;
+      next;
+  }
+
+  if ( @M = $l =~ m#^PLAY \[(.*)\] \*\*# )
+  {
+    $current_play = $M[0];
+    next;
+  }
+
+  if ( @M = $l =~ m#^TASK \[(.*)\] \*\*# )
+  {
+    $current_task = $M[0];
+    next;
+  }
+
+  if ( @M = $l =~ m#^task path: (.*)# )
+  {
+    $current_task .= "[$M[0]]";
+    next;
+  }
+
+  if ( @M = $l =~ m#^(\w+)\: \[([^\[]+)\](.*)# )
+  {
+    ( $msg, $node, $detail ) = @M;
+
+    if ( $msg =~ /^fatal/i )
+    {
+        $fatal{$node} = "$current_play\:\:$current_task";
+    }
+
+    if ( $msg =~ m#$opt{'f'}# && $msg !~ m#$opt{'e'}# )
+    {
+      my @T = gmtime;
+      my $ts = sprintf "%04d%02d%02d_%02d%02d%02d", $T[5]+1900, $T[4]+1, $T[3], $T[2], $T[1], $T[0];
+      printf "\n%s!%s!%s!%s::%s!%s\n", uc($msg), $node, $ts, $current_play, $current_task, $detail;
+    }
+    next;
+  }
+
+  if ( $l =~ m#^PLAY RECAP \*# )
+  {
+      printf "\n%s\n", $l;
+      last;
+  }
+
+
+  printf "[$0-UNMATCHED] $l\n" if $opt{'U'};
+
+}
+
+while ( my $l=<STDIN> )
+{
+  if ( exists $opt{'m'} )
+  {
+     printf STDERR '[RAW] %s', $l;
+  }
+   chomp $l;
+   unless( $l =~ m# ok\=# )
+   {
+       printf "%s", $l;
+       next;
+   }
+   $l =~ s#:##;
+   my @F = split /\s+/, $l;
+   $play_recap{$F[0]} = $l;
+}
+
+unless ( %finalized )
+{
+    for my $n ( sort keys %play_recap )
+    {
+        unless( exists $fatal{$n} )
+        {
+          printf "%s\n", $play_recap{$n};
+        }
+    }
+    for my $n ( sort keys %play_recap )
+    {
+        if( exists $fatal{$n} )
+        {
+          printf "%s fatal=%s\n", $play_recap{$n}, $fatal{$n};
+        } 
+    }
+    exit 0;
+}
+
+for my $n ( sort keys %play_recap )
+{
+    if ( exists $finalized{$n} )
+    {
+      printf "FINALIZED : %s\n", $play_recap{$n};
+    }
+
+}
+for my $n ( sort keys %play_recap )
+{
+    if ( ! exists $finalized{$n} )
+    {
+      printf "INCOMPLETE: %s %s\n", $play_recap{$n}, exists $fatal{$n} ? "fatal=$fatal{$n}" : "[no_fatal]";
+    }
+
+}

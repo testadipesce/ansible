@@ -1,0 +1,88 @@
+#!/usr/bin/perl 
+
+use warnings;
+use strict;
+use File::Basename;
+use Getopt::Std;
+
+
+our %opt;
+
+# defaults
+
+$opt{'i'} = 0;
+$opt{'m'} = "0755";
+$opt{'u'} = 'root';
+$opt{'g'} = 'root';
+$opt{'b'} = 'yes'; 
+
+if ( ! getopts( 'hb:m:i:a:u:g:e:E:d:', \%opt ) || exists $opt{'h'} )
+{
+
+  printf STDERR<<"EOH";
+
+$0 <WS-sep list of path-names>
+
+-d <string>: common base directory
+-i <num>: default indent depth
+-m <string>: mode/permissions, default $opt{'m'}
+-u <string>: owner, default root
+-g <string>: group, default root
+-b <string>: backup... default: $opt{'b'}
+
+-a <path>: instead of output to STDOUT, append stanza to this path
+
+EOH
+  exit 1;
+
+}
+
+
+my $ofh;
+
+
+if ( exists $opt{'a'} )
+{
+  if ( -w $opt{'a'} )
+	{
+          use IO::File;
+          $ofh = new IO::File( "$opt{'a'}", ">>" );
+          open( STDOUT, ">>&", $ofh ) or die sprintf "cannot dup in line %s: $!\n", __LINE__;
+	}
+	else
+	{
+           die sprintf "[%s:%s-DEATH] \'%s\' not a writable path\n", __FILE__, __LINE__, $opt{'a'};
+	}
+}
+
+our $ind=" " x $opt{'i'};
+
+for my $fpath (@ARGV)
+{
+
+  if ( exists $opt{'d'} )
+  {
+     $fpath = "$opt{'d'}/$fpath";
+  }
+  printf "\n\n";
+  printf "$ind- name: %s\n", $fpath; 
+  printf "$ind  tags:\n";
+  my @F = split '/', $fpath;
+  printf "$ind    - %s\n", basename($fpath);
+
+  for my $idx ( 1 .. @F-1 )
+  {
+    printf "$ind    - %s\n", join( '/', @F[0 .. $idx] );
+  }
+
+  printf "$ind  template:\n";
+  my $fpath_pruned;
+  ( $fpath_pruned = $fpath ) =~ s#^/##;
+  printf "$ind    src: %s\n", $fpath_pruned;
+  printf "$ind    dest: %s\n", dirname($fpath);
+  printf "$ind    owner: %s\n", $opt{'u'};
+  printf "$ind    group: %s\n", $opt{'g'};
+  printf "$ind    mode: %s\n", $opt{'m'};
+  printf "$ind    backup %s\n", $opt{'b'};
+}
+

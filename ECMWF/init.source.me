@@ -1,0 +1,21 @@
+# source this to use this ansible git working dir
+
+PATH=/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:~/bin
+
+_SCRIPT_DIR=$(dirname $BASH_SOURCE)                                           
+_SAVEDIR=$PWD                                                                 
+cd $_SCRIPT_DIR/..      
+
+. venv/bin/activate
+. hacking/env-setup
+
+export PATH=$PATH:$PWD/ECMWF/bin
+
+#export ANSIBLE_INVENTORY=$PWD/ecmwf_notes/ansible_hosts
+#export ANSIBLE_CONFIG=$PWD/ecmwf_notes/ansible.cfg
+#export ANSIBLE_KEEP_REMOTE_FILES=1
+
+                                                                             
+cd $_SAVEDIR                                                                  
+unset _SAVEDIR                                                                
+unset _SCRIPT_DIR  

@@ -20,6 +20,9 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import os
+#------------------------------------------------------------------------------# ECMWF BEGIN
+import re
+#------------------------------------------------------------------------------# ECMWF END
 
 # Note, sha1 is the only hash algorithm compatible with python2.4 and with
 # FIPS-140 mode (as of 11-2014)
@@ -57,14 +60,28 @@ def secure_hash(filename, hash_func=sha1):
     if not os.path.exists(to_bytes(filename, errors='surrogate_or_strict')) or os.path.isdir(to_bytes(filename, errors='strict')):
         return None
     digest = hash_func()
-    blocksize = 64 * 1024
+
+#------------------------------------------------------------------------------# ECMWF BEGIN
+#    blocksize = 64 * 1024
+#    try:
+#        infile = open(to_bytes(filename, errors='surrogate_or_strict'), 'rb')
+#        block = infile.read(blocksize)
+#        while block:
+#            digest.update(block)
+#            block = infile.read(blocksize)
+#        infile.close()
+
     try:
-        infile = open(to_bytes(filename, errors='surrogate_or_strict'), 'rb')
-        block = infile.read(blocksize)
-        while block:
-            digest.update(block)
-            block = infile.read(blocksize)
-        infile.close()
+        infile = open( to_bytes(filename, errors='surrogate_or_strict'),mode='rb' )
+        for line in infile:
+            if not re.search( to_bytes('EC_GIT_TAG\s*='), line ):
+            #line = to_bytes(line, errors='surrogate_or_strict')
+                digest.update( line )
+        infile.close() 
+
+#------------------------------------------------------------------------------# EMCWF END
+
+
     except IOError as e:
         raise AnsibleError("error while accessing the file %s, error was: %s" % (filename, e))
     return digest.hexdigest()

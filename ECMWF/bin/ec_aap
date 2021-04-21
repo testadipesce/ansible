@@ -1,0 +1,51 @@
+#!/bin/bash
+
+DEF_ARGS="-vv -D"
+DEF_ARGS=""
+
+__RAW=0
+if [[ $1 == "-R" ]]; then
+  __RAW=1
+  shift
+fi
+
+
+# note that the following environment variable can be used
+# by ansible-playbook to emit a detailed log to !
+export ANSIBLE_LOG_PATH=/tmp/ansible.log.$USER.pid_$$.$(_T)
+
+printf "\n[$0-INFO] ANSIBLE_LOG_PATH=$ANSIBLE_LOG_PATH\n"
+
+EC_GIT_TAG=$(ec_git_describe)
+TAG_RC=$?
+
+printf "EC_GIT_TAG=%s\n" "$EC_GIT_TAG" >> $ANSIBLE_LOG_PATH
+ec_pstree -XKTP $$ >> $ANSIBLE_LOG_PATH 2>&1
+
+export EC_DO_NOT_SOURCE_DOTFILES=bash
+
+BRANCH_PREFIX=$(git branch --show-current | cut -d'_' -f 1)
+if [[ $BRANCH_PREFIX == "master" ]]; then
+    printf "\n\n[ERROR:$0-line:$LINENO] refusing to deploy from master branch - STOP\n\n" >&2
+    exit 1
+fi
+if [[ $TAG_RC == 0 ]]; then
+    printf "\n[$0:l$LINENO-INFO] EC_GIT_TAG=\'%s\'\n\n" "$EC_GIT_TAG"
+  if [[ $__RAW == 1 ]]; then
+      #set -x
+      ( cd $(get_git_root) && ansible-playbook -e "ec_git_tag=\"$EC_GIT_TAG\"" -e "cur_time=$(_T)"  $DEF_ARGS -i hosts.$BRANCH_PREFIX playbooks/site.yml "$@" )
+      set +x
+  else
+      #set -x
+      ( cd $(get_git_root) && ansible-playbook -e "ec_git_tag=\"$EC_GIT_TAG\"" -e "cur_time=$(_T)"  $DEF_ARGS -i hosts.$BRANCH_PREFIX playbooks/site.yml "$@" | ec_ansible_log_filter )
+      set +x
+  fi
+  RC=$?
+else
+    printf "\n[$0-ERROR] looks like there was an issue defining \$EC_GIT_TAG, please review!\n\n" >&2
+    exit 1
+fi
+
+printf "\n[$0-INFO] ANSIBLE_LOG_PATH:\n$ANSIBLE_LOG_PATH\n"
+
+exit $RC

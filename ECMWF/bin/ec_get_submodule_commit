@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# convenience script to get commit hash of a repositories checked-out
+# submodules
+
+FILTER=${1:-"."}
+
+cd $(get_git_root)
+printf "[$0-INFO] commit for submodules for repo at %s\n" "$PWD" >&2
+
+git ls-tree -r HEAD | grep commit | grep -P "$FILTER" | awk '{print $3}'

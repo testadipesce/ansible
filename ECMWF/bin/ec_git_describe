@@ -1,0 +1,38 @@
+#!/bin/bash
+
+RC=0
+
+GIT_STATUS=$(/usr/bin/git status -s -b | perl -ne 'END{ printf "branch:%s,status:-%s-", $b, join("/", keys %FL); } chomp; s/^\s+//; @F=split /\s+/; if ( $F[0] eq "##" ) { $b=$_;} else { $FL{$F[0]}=1;}')
+RC=$((RC+$?))
+
+GIT_REPO=$(/usr/bin/git remote -v 2>&1 | grep fetch | tr '\n' ':' | perl -pe 's#\s+# #g; s# \(fetch\)##;' ) 
+RC=$((RC+$?))
+if [[ "$GIT_REPO" == "" ]]; then
+    GIT_REPO="[no_remote_repo_refs]"
+fi
+
+GIT_TAG=$(/usr/bin/git describe --dirty --broken --long  2>&1 )
+RC=$((RC+$?))
+
+GIT_LOG=$(/usr/bin/git  log -n1 --pretty=format:"%h %cn %cI")
+RC=$((RC+$?))
+
+
+WDIR=$PWD
+HOSTN=$(hostname -s)
+TS=$(date +"%Y%m%d_%H%M%S")
+
+USERID="$(/usr/bin/id -un)"
+if [[ $USERID == root ]]; then
+    USERID="${USERID}(${EC_ROOT_USER:-'UNKNOWN_EC_ROOT_USER'})"
+fi
+
+printf "%s;%s;%s;%s;%s;%s@%s:%s\n" "$TS" "$GIT_TAG" "$GIT_STATUS" "$GIT_REPO" "$GIT_LOG" "$USERID" "$HOSTN" "$WDIR" 
+
+
+if [[ $RC != 0 ]]; then
+    # exit 1
+    exit 0
+else
+    exit 0
+fi
