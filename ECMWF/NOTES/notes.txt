@@ -1,69 +1,22 @@
 Environment setup:
 #------------------------------------------------------------------------------#
-Clone the Ansible repository: $ git clone https://github.com/ansible/ansible.git
+1) Clone the Ansible repository: $ git clone https://github.com/ansible/ansible.git
 Change directory into the repository root dir: $ cd ansible
-Create a virtual environment: $ python3 -m venv venv (or for Python 2 $ virtualenv venv. Note, this requires you to install the virtualenv package: $ pip install virtualenv)
-Activate the virtual environment: $ . venv/bin/activate
-Update pip in venv before development requirements: $ python -m pip install -U pip
-Install development requirements: $ pip install -r requirements.txt
-Run the environment setup script for each new dev shell process: $ . hacking/env-setup
 
+2) Create a virtual environment (note: cna also create this OUTSIDE of the ansible repository): $ python3 -m venv venv (or for Python 2 $ virtualenv venv. Note, this requires you to install the virtualenv package: $ pip install virtualenv)
 
-# hpcsupp@atos-logserv:~/ec_ansible
-+ # . hacking/env-setup
-+ #   +--> 04/21-12:40:41: ". hacking/env-setup"
-+ running egg_info
-+ creating lib/ansible_core.egg-info
-+ writing lib/ansible_core.egg-info/PKG-INFO
-+ writing dependency_links to lib/ansible_core.egg-info/dependency_links.txt
-+ writing requirements to lib/ansible_core.egg-info/requires.txt
-+ writing top-level names to lib/ansible_core.egg-info/top_level.txt
-+ writing manifest file 'lib/ansible_core.egg-info/SOURCES.txt'
-+ reading manifest file 'lib/ansible_core.egg-info/SOURCES.txt'
-+ reading manifest template 'MANIFEST.in'
-+ warning: no files found matching 'SYMLINK_CACHE.json'
-+ warning: no previously-included files found matching 'docs/docsite/rst_warnings'
-+ warning: no previously-included files found matching 'docs/docsite/rst/conf.py'
-+ warning: no previously-included files found matching 'docs/docsite/rst/index.rst'
-+ warning: no previously-included files matching '*' found under directory 'docs/docsite/_build'
-+ warning: no previously-included files matching '*.pyc' found under directory 'docs/docsite/_extensions'
-+ warning: no previously-included files matching '*.pyo' found under directory 'docs/docsite/_extensions'
-+ warning: no files found matching '*.ps1' under directory 'lib/ansible/modules/windows'
-+ 'test/integration/targets/ansible/ansible-test\udcc3\udca9.cfg' not utf-8 encodable -- skipping
-+ 'test/integration/targets/template/templates/caf\udcc3\udca9.j2' not utf-8 encodable -- skipping
-+ 'test/integration/targets/unarchive/files/test-unarchive-nonascii-\udce3\udc81\udc8f\udce3\udc82\udc89\udce3\udc81\udca8\udce3\udc81\udcbf.tar.gz' not utf-8 encodable -- skipping
-+ 'test/integration/targets/unicode/k\udcc5\udc99\udcc3\udcad\udcc5\udcbeek-ansible-project/ansible.cfg' not utf-8 encodable -- skipping
-+ 'test/integration/targets/vault/vault-caf\udcc3\udca9.yml' not utf-8 encodable -- skipping
-+ warning: no files found matching '*.psm1' under directory 'test/support'
-+ writing manifest file 'lib/ansible_core.egg-info/SOURCES.txt'
-+ 
-+ Setting up Ansible to run out of checkout...
-+ 
-+ PATH=/home/hpcsupp/ec_ansible/bin:/home/hpcsupp/ec_ansible/venv/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/hpcsupp/bin
-+ PYTHONPATH=/home/hpcsupp/ec_ansible/lib
-+ MANPATH=/home/hpcsupp/ec_ansible/docs/man:/usr/local/share/man:/usr/share/man
-+ 
-+ Remember, you may wish to specify your host file with -i
-+ 
-+ Done!
+3) Activate the virtual environment: $ . venv/bin/activate
+
+4) Update pip in venv before development requirements: $ python -m pip install -U pip
+5) Install development requirements: $ pip install -r requirements.txt
+
+6) Run the environment setup script for each new dev shell process: $ . hacking/env-setup
 
 
 
-
-
-
-
-
-
-
-
-Note
-
-After the initial setup above, every time you are ready to start developing Ansible you should be able to just run the following from the root of the Ansible repo: $ . venv/bin/activate && . hacking/env-setup
-
-
-
-ECMWF ansible hacks:
+#------------------------------------------------------------------------------#
+# ECMWF ansible hacks:
+#------------------------------------------------------------------------------#
 
 1) 
 
@@ -77,7 +30,6 @@ presence of ECMWF_ANSIBLE_HACKS=... value in environment or ansible variable
 (on source and remote host!)
 
 
-
 2) 
 
 lib/ansible/module_utils/basic.py has been hacked that such if a file object has "backup=yes", the backup path is under <deploy_dir>/.eccfg/<filename>.ec_ansible_backup.<timestamp>
@@ -85,7 +37,6 @@ lib/ansible/module_utils/basic.py has been hacked that such if a file object has
 To chase in ansible code: git grep eccfg
 
 TODO: condition this behaviour on ECMWF_ANSIBLE_HACKS vars
-
 
 
 3) 
@@ -108,5 +59,3 @@ left to right.
 
 
 TODO: condition this extension on ECMWF_ANSIBLE_HACKS vars (although this does not change any default ansible behaviour, provided "non-weird" directory names only are used
-
-
